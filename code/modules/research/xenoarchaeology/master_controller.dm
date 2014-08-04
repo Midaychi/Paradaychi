@@ -5,6 +5,8 @@
 	var/list/genome_prefixes = null
 	var/list/artifact_spawning_turfs = list()
 	var/list/digsite_spawning_turfs = list()
+	var/list/undiscovered_genesequences_animal = null
+	var/list/undiscovered_genesequences_plant = null
 
 	var/list/spawn_types_animal = list("/mob/living/carbon/slime",\
 	"/mob/living/simple_animal/hostile/alien",\
@@ -37,6 +39,7 @@
 #define DIGSITESIZE_UPPER 12
 #define ARTIFACTSPAWNNUM_LOWER 6
 #define ARTIFACTSPAWNNUM_UPPER 12
+
 
 datum/controller/game_controller/proc/SetupXenoarch()
 	//create digsites
@@ -124,6 +127,7 @@ datum/controller/game_controller/proc/SetupXenoarch()
 			new_sequence.full_genome_sequence.Add("[prefixletter][pick(alphabet_uppercase)][pick(alphabet_uppercase)][pick(1,2,3,4,5,6,7,8,9,0)][pick(1,2,3,4,5,6,7,8,9,0)]")
 
 		all_animal_genesequences.Add(new_sequence)
+		undiscovered_genesequences_animal = all_animal_genesequences
 
 	//create plant gene sequences
 	while(spawn_types_plant.len && genome_prefixes.len)
@@ -137,6 +141,7 @@ datum/controller/game_controller/proc/SetupXenoarch()
 			new_sequence.full_genome_sequence.Add("[prefixletter][pick(1,2,3,4,5,6,7,8,9,0)][pick(1,2,3,4,5,6,7,8,9,0)][pick(alphabet_uppercase)][pick(alphabet_uppercase)]")
 
 		all_plant_genesequences.Add(new_sequence)
+		undiscovered_genesequences_plant = all_plant_genesequences
 
 #undef XENOARCH_SPAWN_CHANCE
 #undef DIGSITESIZE_LOWER

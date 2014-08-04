@@ -4,8 +4,6 @@ datum/genesequence
 	var/spawned_type_text
 	var/list/full_genome_sequence = list()
 
-
-
 #define SCANFOSSIL_RETVAL_WRONGTYPE 1
 #define SCANFOSSIL_RETVAL_NOMOREGENESEQ 2
 #define SCANFOSSIL_RETVAL_SUCCESS 4
@@ -23,7 +21,6 @@ datum/genesequence
 	var/datum/dna2/record/active_record = null
 	var/obj/item/weapon/disk/data/diskette = null //Mostly so the geneticist can steal everything.
 	var/loading = 0 // Nice loading text
-	var/list/undiscovered_genesequences = null
 	var/list/discovered_genesequences = list()
 	var/list/completed_genesequences = list()
 	var/list/undiscovered_genomes = list()
@@ -31,10 +28,7 @@ datum/genesequence
 	var/list/discovered_genomes = list("! Clear !")
 	var/list/accepted_fossil_types = list(/obj/item/weapon/fossil/plant)
 
-
 /obj/machinery/computer/reconstitutor/initialize()
-	if(!undiscovered_genesequences)
-		undiscovered_genesequences = master_controller.all_plant_genesequences.Copy()
 	..()
 
 /obj/machinery/computer/reconstitutor/animal
@@ -44,7 +38,6 @@ datum/genesequence
 	circuit = "/obj/item/weapon/circuitboard/reconstitutor/animal"
 
 /obj/machinery/computer/reconstitutor/animal/initialize()
-	undiscovered_genesequences = master_controller.all_animal_genesequences.Copy()
 	..()
 
 /obj/machinery/computer/reconstitutor/attackby(obj/item/W, mob/user)
@@ -53,11 +46,11 @@ datum/genesequence
 		W.loc = src.loc
 		switch(scan_fossil(W))
 			if(1)
-				src.visible_message("\red \icon[src] [src] scans the fossil and rejects it.")
+				src.visible_message("\red \icon[src] [src] scans the fossil and rejects it due to wrong type.")
 			if(2)
-				visible_message("\red \icon[src] [src] can not extract any more genetic data from new fossils.")
+				visible_message("\red \icon[src] [src] reports no new genetic data found in sample.")
 			if(4)
-				src.visible_message("\blue \icon[src] [user] inserts [W] into [src], the fossil is consumed as [src] extracts genetic data from it.")
+				src.visible_message("\blue \icon[src] [user] inserts [W] into [src], the fossil is accepted and consumed.")
 				del(W)
 				updateDialog()
 	else if (istype(W, /obj/item/weapon/storage))
@@ -79,11 +72,11 @@ datum/genesequence
 					updateDialog()
 		var/outmsg = "\blue You empty all the fossils from [S] into [src]."
 		if(numaccepted)
-			outmsg += " \blue[numaccepted] fossils were accepted and consumed as [src] extracts genetic data from them."
+			outmsg += " \blue[numaccepted] fossils were accepted and consumed."
 		if(numrejected)
-			outmsg += " \red[numrejected] fossils were rejected."
+			outmsg += " \red[numrejected] fossils were rejected due to wrong type."
 		if(full)
-			outmsg += " \red[src] can not extract any more genetic data from new fossils."
+			outmsg += " \red[src] reports no new genetic data found in sample."
 		visible_message(outmsg)
 
 	else
@@ -275,10 +268,20 @@ datum/genesequence
 				undiscovered_genomes -= newly_discovered_genome
 				discovered_genomes.Add(newly_discovered_genome)
 
-	else if(undiscovered_genesequences.len)
+	else if(master_controller.undiscovered_genesequences_plant.len && istype(scan_fossil,/obj/item/weapon/fossil/plant))
 		//discover new gene sequence
-		var/datum/genesequence/newly_discovered_genesequence = pick(undiscovered_genesequences)
-		undiscovered_genesequences -= newly_discovered_genesequence
+		var/datum/genesequence/newly_discovered_genesequence = pick(master_controller.undiscovered_genesequences_plant)
+		master_controller.undiscovered_genesequences_plant -= newly_discovered_genesequence
+		discovered_genesequences += newly_discovered_genesequence
+		//add genomes for new gene sequence to pool of discoverable genomes
+		undiscovered_genomes.Add(newly_discovered_genesequence.full_genome_sequence)
+		manually_placed_genomes.Add(null)
+		manually_placed_genomes[manually_placed_genomes.len] = new/list(7)
+
+	else if(master_controller.undiscovered_genesequences_animal.len && (istype(scan_fossil,/obj/item/weapon/fossil/bone) || istype(scan_fossil,/obj/item/weapon/fossil/skull) || istype(scan_fossil,/obj/item/weapon/fossil/shell)))
+		//discover new gene sequence
+		var/datum/genesequence/newly_discovered_genesequence = pick(master_controller.undiscovered_genesequences_animal)
+		master_controller.undiscovered_genesequences_animal -= newly_discovered_genesequence
 		discovered_genesequences += newly_discovered_genesequence
 		//add genomes for new gene sequence to pool of discoverable genomes
 		undiscovered_genomes.Add(newly_discovered_genesequence.full_genome_sequence)
